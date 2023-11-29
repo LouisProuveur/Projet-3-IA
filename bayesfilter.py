@@ -118,9 +118,6 @@ class BeliefStateAgent(Agent):
         
         position = (xPac, H - yPac)
         
-        print(position)
-        print(evidence)
-        
         Observ = np.ndarray((H,W))
         print(Observ.shape)
         sum = 0
@@ -133,10 +130,7 @@ class BeliefStateAgent(Agent):
                 
                 Observ[y][x] = p_z
                 sum += p_z
-                
-        print(Observ)
-        
-        print(sum)
+
                 
         for x in range(W):
             for y in range(H):
@@ -147,10 +141,6 @@ class BeliefStateAgent(Agent):
         for i in Observ:
             for j in i:
                 sum += j
-
-        print(Observ)
-        
-        print(sum)
         
         plt.imshow(Observ, cmap = 'hot')
         leg = "dist =" + str(evidence)
