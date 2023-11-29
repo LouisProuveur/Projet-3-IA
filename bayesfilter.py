@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.stats import binom
+from pacman_module.util import normalize
+import matplotlib.pyplot as plt
 
 from pacman_module.game import Agent, Directions, manhattanDistance
 
@@ -46,8 +48,6 @@ class BeliefStateAgent(Agent):
         """
 
         #def computeProba(i,j,k,l) :
-        
-        print(walls)
             
         W,H = gridSize(walls)
         
@@ -55,8 +55,6 @@ class BeliefStateAgent(Agent):
         
         for i in range(W-1) :
             for j in range(H-1) :
-                
-                print(i,j)
                 
                 toModify = []
                 
@@ -110,19 +108,54 @@ class BeliefStateAgent(Agent):
         Returns:
             The W x H observation matrix O_t.
         """
-        
-        n = 4
-        p = 0.5
 
         W,H = gridSize(walls)
         
-        Observ = np.ndarray((W,H))
+        n = 4
+        p = 0.5
         
-        for i in range(W):
-            for j in range(H):
-                trueDist = manhattanDistance(position,(i,j))
-                z = trueDist + n*p
-                Observ[i][j] = binom.pmf(n,p,z)
+        xPac, yPac = position
+        
+        position = (xPac, H - yPac)
+        
+        print(position)
+        print(evidence)
+        
+        Observ = np.ndarray((H,W))
+        print(Observ.shape)
+        sum = 0
+        
+        for x in range(W):
+            for y in range(H):
+                trueDist = manhattanDistance(position,(x,y))
+                z = evidence - trueDist + n*p
+                p_z = binom.pmf(z,n,p)
+                
+                Observ[y][x] = p_z
+                sum += p_z
+                
+        print(Observ)
+        
+        print(sum)
+                
+        for x in range(W):
+            for y in range(H):
+                Observ[y][x] /= sum 
+        
+        sum = 0
+        
+        for i in Observ:
+            for j in i:
+                sum += j
+
+        print(Observ)
+        
+        print(sum)
+        
+        plt.imshow(Observ, cmap = 'hot')
+        leg = "dist =" + str(evidence)
+        plt.title(leg)
+        plt.show()
                 
         return Observ
 
