@@ -45,12 +45,10 @@ class BeliefStateAgent(Agent):
             of T_t is the probability P(X_t = (k, l) | X_{t-1} = (i, j)) for
             the ghost to move from (i, j) to (k, l).
         """
-
-        #def computeProba(i,j,k,l) :
             
         W,H = gridSize(walls)
         
-        trans = np.ndarray((W,H,W,H))
+        trans = np.zeros((W,H,W,H))
         
         fear = 0
         
@@ -60,8 +58,49 @@ class BeliefStateAgent(Agent):
         elif self.ghost == "terrified":
             fear = 3.0
             
-        print(fear)
-
+        for i in range(W):
+            for j in range(H):        
+                if walls[i][j]:
+                    continue
+                
+                currentDist = manhattanDistance(position,(i,j))
+                
+                sum = 0
+                
+                if not walls[i-1][j]: # proba of going right
+                    val = 2*fear if manhattanDistance(position,(i-1,j)) >= currentDist else 1
+                    trans[i][j][i-1][j] = val
+                    sum += val
+                    
+                if not walls[i+1][j]: # proba of going left 
+                    val = 2*fear if manhattanDistance(position,(i+1,j)) >= currentDist else 1
+                    trans[i][j][i+1][j] = val
+                    sum += val
+                    
+                if not walls[i][j-1]: #proba of going down
+                    val = 2*fear if manhattanDistance(position,(i,j-1)) >= currentDist else 1
+                    trans[i][j][i][j-1] = val
+                    sum += val
+                    
+                if not walls[i][j+1]: #proba of going up
+                    val = 2*fear if manhattanDistance(position,(i,j+1)) >= currentDist else 1
+                    trans[i][j][i][j+1] = val
+                    sum += val
+                
+             
+                
+                # normalizing
+                if sum == 0:
+                    continue
+                trans[i][j][i-1][j] /= sum
+                trans[i][j][i+1][j] /= sum
+                trans[i][j][i][j-1] /= sum
+                trans[i][j][i][j+1] /= sum
+                
+                
+                
+                
+            
         return trans
 
     def observation_matrix(self, walls, evidence, position):
@@ -86,12 +125,7 @@ class BeliefStateAgent(Agent):
         n = 4
         p = 0.5
         
-        xPac, yPac = position
-        
-        position = (xPac, yPac)
-        
-        Observ = np.ndarray((H,W))
-        print(Observ.shape)
+        Observ = np.ndarray((W,H))
         sum = 0
         
         for x in range(W):
@@ -100,49 +134,81 @@ class BeliefStateAgent(Agent):
                 z = evidence - trueDist + n*p
                 p_z = binom.pmf(z,n,p)
                 
-                Observ[y][x] = p_z
+                Observ[x][y] = p_z
                 sum += p_z
 
-                
+        #normalizing        
         for x in range(W):
             for y in range(H):
-                Observ[y][x] /= sum 
-        
-        sum = 0
-        
-        for i in Observ:
-            for j in i:
-                sum += j
-        
+                Observ[x][y] /= sum 
+                
+
+        """
         plt.imshow(Observ, cmap = 'hot')
         leg = "dist = " + str(evidence)
         plt.title(leg)
         plt.show()
+        """
                 
         return Observ
-
-    def update(self, walls, belief, evidence, position):
+    
+    def update(self, walls, belief, evidence, position): #Do I have to use a prior or is comprised in evidence ? 
+        
         """Updates the previous ghost belief state
 
-            b_{t-1} = P(X_{t-1} | e_{1:t-1})
+            b_{t-1} = P(X_{t-1} | e_{1:t-1}) (user note : b_{t-1} is actually f_{t-1} in the course given its definition.)
 
         given a noisy ghost distance evidence e_t and the current Pacman
         position.
 
         Arguments:
             walls: The W x H grid of walls.
-            belief: The belief state for the previous ghost position b_{t-1}.
+            belief: The belief state for the previous ghost position b_{t-1} (f_{t-1}).
             evidence: A noisy ghost distance evidence e_t.
             position: The current position of Pacman.
 
         Returns:
             The updated ghost belief state b_t as a W x H matrix.
         """
-
+        W,H = gridSize(walls)
+            
         T = self.transition_matrix(walls, position)
         O = self.observation_matrix(walls, evidence, position)
+        sum = 0
+        alpha = 0
+       
+        """
+        The problem is T is 4 dimensional whereas O is 2 dimensional so we must marginalize T with respect to k and l in order to compute the updated belief state.
+        We call A the matrix obtained by this marginalization.
+        """
+        A = np.zeros((W,H)) 
+        for i in range(W):
+            for j in range(H):
+                for k in range(W):
+                    for l in range(H):
+                        sum += T.T[j,i,l,k]*belief[k,l] 
+                        #sum += T[i,j,k,l]*belief[k,l]
+                A[i,j] = O[i,j]*sum
+                
+                if A[i,j] != 0:    
+                    alpha += 1/(A[i,j]) #computing the normalization constant. 
+        
+        
+        
+        #Then we multiply A by the normalization constant such that sum of all the elements equals to 1.
+        for i in range(W):
+            for j in range(H):
+                A[i,j]*alpha
+        #print(A)
+        return A
+    
 
-        return 0
+        
+  
+        
+        
+        
+        
 
     def get_action(self, state):
         """Updates the previous belief states given the current state.
