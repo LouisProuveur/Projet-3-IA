@@ -191,14 +191,14 @@ class BeliefStateAgent(Agent):
                 A[i,j] = O[i,j]*sum
                 
                 if A[i,j] != 0:    
-                    alpha += 1/(A[i,j]) #computing the normalization constant. 
+                    alpha += A[i,j] #computing the normalization constant. 
         
         
         
         #Then we multiply A by the normalization constant such that sum of all the elements equals to 1.
         for i in range(W):
             for j in range(H):
-                A[i,j]*alpha
+                A[i,j] /= alpha
         #print(A)
         return A
     
