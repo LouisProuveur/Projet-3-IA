@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.stats import binom
-from pacman_module.util import normalize
 import matplotlib.pyplot as plt
 
 from pacman_module.game import Agent, Directions, manhattanDistance
@@ -53,42 +52,15 @@ class BeliefStateAgent(Agent):
         
         trans = np.ndarray((W,H,W,H))
         
-        for i in range(W-1) :
-            for j in range(H-1) :
-                
-                toModify = []
-                
-                nbTrans = 4 #nbr of possible transitions
-                
-                if walls[i - 1][j]: 
-                    nbTrans -= 1
-                else:
-                    toModify += [(i-1, j)] 
-                
-                if walls[i][j - 1]:
-                    nbTrans -= 1
-                else:
-                    toModify += [(i, j-1)]
-                    
-                if walls[i + 1][j]:
-                    nbTrans -= 1
-                else:
-                    toModify += [(i+1, j)]
-                    
-                if walls[i][j + 1]:
-                    nbTrans -= 1
-                else:
-                    toModify += [(i, j + 1)]
-                    
-                if nbTrans == 0:
-                    trans[i][j][i][j] = 1 #ghost blocked
-                    
-                else:
-                    for k,l in toModify:
-                        trans[i][j][k][l] = 1/nbTrans #we assume here that the ghosts move randomly
-                    """
-                    To compute the actual probability of the positions, use the fact that the ghosts favorize a given discplacement
-                    """
+        fear = 0
+        
+        if self.ghost == "afraid":
+            fear = 1.0
+        
+        elif self.ghost == "terrified":
+            fear = 3.0
+            
+        print(fear)
 
         return trans
 
@@ -116,7 +88,7 @@ class BeliefStateAgent(Agent):
         
         xPac, yPac = position
         
-        position = (xPac, H - yPac)
+        position = (xPac, yPac)
         
         Observ = np.ndarray((H,W))
         print(Observ.shape)
@@ -143,7 +115,7 @@ class BeliefStateAgent(Agent):
                 sum += j
         
         plt.imshow(Observ, cmap = 'hot')
-        leg = "dist =" + str(evidence)
+        leg = "dist = " + str(evidence)
         plt.title(leg)
         plt.show()
                 
