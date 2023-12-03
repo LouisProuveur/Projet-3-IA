@@ -96,10 +96,10 @@ class BeliefStateAgent(Agent):
                 trans[i][j][i+1][j] /= sum
                 trans[i][j][i][j-1] /= sum
                 trans[i][j][i][j+1] /= sum
-                
-                
-                
-                
+
+
+                #print(f"dim of trans matrix : {trans.shape} and dim of trans.T matrix : {trans.T.shape}") 
+               
             
         return trans
 
@@ -186,22 +186,31 @@ class BeliefStateAgent(Agent):
             for j in range(H):
                 for k in range(W):
                     for l in range(H):
-                        sum += T.T[j,i,l,k]*belief[k,l] 
-                        #sum += T[i,j,k,l]*belief[k,l]
-                A[i,j] = O[i,j]*sum
+                        sum += T.T[j][i][l][k]*belief[k][l] 
+                        
+                if not walls[i][j]: #The ghost can't be on a wall therefore the belief must be zero.
+                    A[i][j] = O[i][j]*sum
                 
-                if A[i,j] != 0:    
-                    alpha += A[i,j] #computing the normalization constant. 
+    
+                alpha += A[i][j] #computing the normalization constant. 
         
         
         
         #Then we multiply A by the normalization constant such that sum of all the elements equals to 1.
         for i in range(W):
             for j in range(H):
-                A[i,j] /= alpha
+                if alpha != 0:
+                    A[i][j] /= alpha
+                """
+                The following condition translates the fact that updated believes have to be near the previous believes since the ghost can only move
+                from one case to another and can't cross a wall. Without this conditions, new believes appear at the other side of walls while the ghost 
+                is not physically capable of going there in one move. Hence, such believes have to be suppressed from the updated belief matrix A.
+                """   
+                if not walls[i][j] and A[i][j] != 0 and not belief[i-1][j] and not belief[i+1][j] and not belief[i][j+1] and not belief[i][j-1]:
+                    A[i][j] = 0
+                
         #print(A)
         return A
-    
 
         
   
@@ -227,6 +236,8 @@ class BeliefStateAgent(Agent):
         eaten = state.getGhostEaten()
         evidences = state.getGhostNoisyDistances()
         position = state.getPacmanPosition()
+        
+        
 
         new_beliefs = [None] * len(beliefs)
 
@@ -260,6 +271,9 @@ class PacmanAgent(Agent):
 
         Returns:
             A legal move as defined in `game.Directions`.
+        
+        Idea  1 : look at which ghost is the nearest, then pacman has to go where the the probability is the higher to find the ghost. 
+        
         """
 
         return Directions.STOP
