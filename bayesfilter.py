@@ -1,9 +1,7 @@
 import numpy as np
 from scipy.stats import binom
-import matplotlib.pyplot as plt
 
 from pacman_module.game import Agent, Directions, manhattanDistance
-
 
 def gridSize(grid):
     n_x = 0
@@ -16,6 +14,8 @@ def gridSize(grid):
         n_y += 1
 
     return (n_x, n_y)
+
+        
 
 class BeliefStateAgent(Agent):
     """Belief state agent.
@@ -210,14 +210,7 @@ class BeliefStateAgent(Agent):
                     A[i][j] = 0
                 
         #print(A)
-        return A
-
-        
-  
-        
-        
-        
-        
+        return A       
 
     def get_action(self, state):
         """Updates the previous belief states given the current state.
@@ -272,11 +265,48 @@ class PacmanAgent(Agent):
         Returns:
             A legal move as defined in `game.Directions`.
         
-        Idea  1 : look at which ghost is the nearest, then pacman has to go where the the probability is the higher to find the ghost. 
-        
         """
-
-        return Directions.STOP
+    
+            
+        def proba(position, beliefs, gIndex, W, H): #heuristic
+        
+            prob = 0
+            
+            for i in range(W):
+                for j in range(H):
+                    prob += manhattanDistance(position,(i,j))*beliefs[gIndex][i][j]
+                    
+            return prob
+        
+        gIndex = 0
+        
+        while eaten[gIndex] and gIndex < len(eaten):
+            gIndex += 1
+            
+        W,H = gridSize(walls)
+        
+        x,y = position
+            
+        actions = [((x-1,y),"West"),((x+1,y),"East"),((x,y-1),"South"),((x,y+1),"North")]
+        
+        prob = 100000
+        
+        taken = None
+        
+        for next, action in actions:
+            if walls[next[0]][next[1]] or next == self.lastPosition:
+                continue
+            
+            nextProb = proba(next,beliefs,gIndex,W,H)
+            
+            if nextProb < prob:
+                prob = nextProb
+                taken = action
+        
+        self.lastPosition = position
+                
+        return taken
+            
 
     def get_action(self, state):
         """Given a Pacman game state, returns a legal move.
