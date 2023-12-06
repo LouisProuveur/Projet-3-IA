@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import binom
+from pacman_module.util import PriorityQueue
 
 from pacman_module.game import Agent, Directions, manhattanDistance
 
@@ -15,7 +16,44 @@ def gridSize(grid):
 
     return (n_x, n_y)
 
+
+def mazeDistance(walls, position, destination):
+    
+    if walls[destination[0]][destination[1]]:
+        return -1
+    
+    fringe = PriorityQueue()
+    
+    fringe.push((position,0),0)
+    
+    closed = set()
+    
+    while True:
         
+        if fringe.isEmpty():
+            return 0
+        
+        current, dist = fringe.pop()[1]
+        
+        if current == destination:
+            return dist
+        
+        if current in closed:
+            continue
+        else:
+            closed.add(current)
+            
+        x,y = current
+    
+        actions = [(x-1, y),(x+1, y),(x, y-1),(x,y+1)]
+        
+        for action in actions:
+            if not walls[action[0]][action[1]]:
+                a = manhattanDistance(action, destination) + dist
+                fringe.push((action,dist + 1),a)
+            
+    return dist
+            
 
 class BeliefStateAgent(Agent):
     """Belief state agent.
@@ -253,6 +291,7 @@ class PacmanAgent(Agent):
 
     def __init__(self):
         super().__init__()
+        self.one = True
 
     def _get_action(self, walls, beliefs, eaten, position):
         """
@@ -265,19 +304,25 @@ class PacmanAgent(Agent):
         Returns:
             A legal move as defined in `game.Directions`.
         
-        """
-    
-            
-        def proba(position, beliefs, gIndex, W, H): #heuristic
+        """  
+        if self.one:
+            breakpoint()
+            self.one = False
+        
+        def proba(walls, position, beliefs, gIndex): #heuristic
         
             prob = 0
             
+            W,H = gridSize(walls)
+            
             for i in range(W):
                 for j in range(H):
-                    prob += manhattanDistance(position,(i,j))*beliefs[gIndex][i][j]
+                    prob += mazeDistance(walls,position,(i,j))*beliefs[gIndex][i][j]
                     
             return prob
         
+        
+        #determining ghost to be eaten
         gIndex = 0
         
         while eaten[gIndex] and gIndex < len(eaten):
@@ -289,18 +334,32 @@ class PacmanAgent(Agent):
             
         actions = [((x-1,y),"West"),((x+1,y),"East"),((x,y-1),"South"),((x,y+1),"North")]
         
-        prob = 100000
+        
+        
+        """proba = 0
+        maxProbaPos = (0,0)
+        
+        for x in range(W):
+            for y in range(H):
+                if beliefs[gIndex][x][y] > proba:
+                    proba = beliefs[gIndex][x][y]
+                    maxProbaPos = (x,y)"""
+                    
+        
+        #chosing action leading the closest to the highest proba point
+        
+        dist = 100000
         
         taken = None
         
         for next, action in actions:
-            if walls[next[0]][next[1]] or next == self.lastPosition:
+            if walls[next[0]][next[1]]:
                 continue
             
-            nextProb = proba(next,beliefs,gIndex,W,H)
+            nextDist = proba(walls,next,beliefs,gIndex)
             
-            if nextProb < prob:
-                prob = nextProb
+            if nextDist < dist:
+                dist = nextDist
                 taken = action
         
         self.lastPosition = position
