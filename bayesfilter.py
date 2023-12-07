@@ -305,9 +305,6 @@ class PacmanAgent(Agent):
             A legal move as defined in `game.Directions`.
         
         """  
-        if self.one:
-            breakpoint()
-            self.one = False
         
         def proba(walls, position, beliefs, gIndex): #heuristic
         
