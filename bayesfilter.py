@@ -106,22 +106,22 @@ class BeliefStateAgent(Agent):
                 sum = 0
                 
                 if not walls[i-1][j]: # proba of going right
-                    val = 2*fear if manhattanDistance(position,(i-1,j)) >= currentDist else 1
+                    val = 2**fear if manhattanDistance(position,(i-1,j)) >= currentDist else 1
                     trans[i][j][i-1][j] = val
                     sum += val
                     
                 if not walls[i+1][j]: # proba of going left 
-                    val = 2*fear if manhattanDistance(position,(i+1,j)) >= currentDist else 1
+                    val = 2**fear if manhattanDistance(position,(i+1,j)) >= currentDist else 1
                     trans[i][j][i+1][j] = val
                     sum += val
                     
                 if not walls[i][j-1]: #proba of going down
-                    val = 2*fear if manhattanDistance(position,(i,j-1)) >= currentDist else 1
+                    val = 2**fear if manhattanDistance(position,(i,j-1)) >= currentDist else 1
                     trans[i][j][i][j-1] = val
                     sum += val
                     
                 if not walls[i][j+1]: #proba of going up
-                    val = 2*fear if manhattanDistance(position,(i,j+1)) >= currentDist else 1
+                    val = 2**fear if manhattanDistance(position,(i,j+1)) >= currentDist else 1
                     trans[i][j][i][j+1] = val
                     sum += val
                 
@@ -354,6 +354,8 @@ class PacmanAgent(Agent):
                 continue
             
             nextDist = proba(walls,next,beliefs,gIndex)
+            
+            #nextDist = mazeDistance(walls,next,maxProbaPos)
             
             if nextDist < dist:
                 dist = nextDist
